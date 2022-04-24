@@ -5,7 +5,7 @@ import { store } from './redux/store'
 
 function App() {
   const client = new ApolloClient({
-    uri: `https://graphql-weather-api.herokuapp.com/`,
+    uri: `http://localhost:4000/`,
     cache: new InMemoryCache(),
   })
 
