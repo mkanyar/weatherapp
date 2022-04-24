@@ -2,6 +2,9 @@
 # The component gets it's data from the redux store
 
 ## Installation
-* Clone the repo.
-* npm install
-* npm start
+```javascript
+git clone https://github.com/mkanyar/weatherapp.git
+cd weatherapp
+npm install
+npm start
+```
