@@ -1,51 +1,64 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 
-import { useQuery } from '@apollo/client'
+import { request } from 'graphql-request'
 import { GET_WEATHER_QUERY } from '../../graphql/Queries'
 import { useDispatch, useSelector } from 'react-redux'
 import './Weather.css'
 import { addWeather } from '../../redux/weatherSlice'
+import { GEOLOCATION_ENDPOINT, WEATHER_ENDPOINT } from '../../constant'
 
 function Weather() {
   const [location, setLocation] = useState('')
-  const { data, loading } = useQuery(GET_WEATHER_QUERY, {
-    variables: { name: location.city || 'Toronto' },
-  })
-
   const { actual, feelsLike, speed } = useSelector(
     (state) => state.weather.value
   )
   const dispatch = useDispatch()
 
-  useEffect(() => {
-    fetchLocation()
-  }, [])
-
-  useEffect(() => {
-    if (data) {
-      dispatch(
-        addWeather({
-          actual: data.getCityByName.weather.temperature.actual,
-          feelsLike: data.getCityByName.weather.temperature.feelsLike,
-          speed: data.getCityByName.weather.wind.speed,
-        })
-      )
-    }
-  }, [data, dispatch])
-
   async function fetchLocation() {
-    await fetch(`https://geolocation-db.com/json/${process.env.API_KEY}`)
+    return await fetch(`${GEOLOCATION_ENDPOINT}${process.env.API_KEY}`)
       .then((res) => res.json())
-      .then((data) => setLocation(data))
+      .then((data) => {
+        setLocation(data)
+        return data
+      })
   }
 
-  if (!location || loading) {
+  const fetchWeather = useCallback(
+    async function () {
+      const loc = await fetchLocation()
+
+      const data = await request(WEATHER_ENDPOINT, GET_WEATHER_QUERY, {
+        name: loc.city,
+      })
+      const { temperature, wind } = data.getCityByName.weather
+
+      dispatch(
+        addWeather({
+          actual: temperature.actual,
+          feelsLike: temperature.feelsLike,
+          speed: wind.speed,
+        })
+      )
+    },
+    [dispatch]
+  )
+
+  useEffect(() => {
+    fetchWeather()
+  }, [fetchWeather])
+
+  if (!location || !actual || !feelsLike || !speed) {
     return <div className="wrapper">...loading</div>
+  }
+
+  function refreshWeather() {
+    setLocation(null)
+    fetchWeather()
   }
 
   return (
     <div className="wrapper">
-      <button onClick={fetchLocation}>Refresh</button>
+      <button onClick={() => refreshWeather()}>Refresh</button>
       <h1>
         Your location is <span>{location.city}</span>,{' '}
         <span>{location.state}</span>, in <span>{location.country_name}</span>

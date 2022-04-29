@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client'
+import { gql } from 'graphql-request'
 
 export const GET_WEATHER_QUERY = gql`
   query getCityByName($name: String!) {
